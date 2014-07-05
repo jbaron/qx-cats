@@ -1,0 +1,12 @@
+{
+  "name": "qx-cats",
+  "version": "0.2.0",
+  "main" : "index.html",
+   "window": {
+    "toolbar": false,
+    "position": "center",
+    "width": 1000,
+    "height": 800
+  },
+  "repository" : {}
+}
