@@ -114,16 +114,15 @@ function qooxdooMain(app) {
     // qooxdoo header
     // toolbar
     var toolbar = new qx.ui.toolbar.ToolBar();
-    var a = qx["theme"];
 
     var themeButton1 = new qx.ui.toolbar.Button("Modern");
     themeButton1.addListener("click", function () {
-        a.manager.Meta.getInstance().setTheme(a.Modern);
+        qx.theme.manager.Meta.getInstance().setTheme(qx.theme.Modern);
     });
 
     var themeButton2 = new qx.ui.toolbar.Button("Indigo");
     themeButton2.addListener("click", function () {
-        a.manager.Meta.getInstance().setTheme(a.Indigo);
+        qx.theme.manager.Meta.getInstance().setTheme(qx.theme.Indigo);
     });
 
     toolbar.add(themeButton1);

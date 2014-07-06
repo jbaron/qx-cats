@@ -4,6 +4,12 @@ declare module qx {
     var registry: any;
 }
 
+declare module qx.theme {
+    var manager: any;
+    var Modern: any;
+    var Indigo: any;
+}
+
 declare module qx.ui.basic {
     class Atom extends qx.ui.core.Widget {
         constructor(label: string, icon?: string);
