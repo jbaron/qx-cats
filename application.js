@@ -114,14 +114,20 @@ function qooxdooMain(app) {
     // qooxdoo header
     // toolbar
     var toolbar = new qx.ui.toolbar.ToolBar();
-    var themeButton = new qx.ui.toolbar.Button("Indigo");
-    themeButton.addListener("click", function () {
-        var a = qx["theme"];
+    var a = qx["theme"];
+
+    var themeButton1 = new qx.ui.toolbar.Button("Modern");
+    themeButton1.addListener("click", function () {
+        a.manager.Meta.getInstance().setTheme(a.Modern);
+    });
+
+    var themeButton2 = new qx.ui.toolbar.Button("Indigo");
+    themeButton2.addListener("click", function () {
         a.manager.Meta.getInstance().setTheme(a.Indigo);
     });
-    toolbar.add(themeButton);
 
-    toolbar.setBackgroundColor("black");
+    toolbar.add(themeButton1);
+    toolbar.add(themeButton2);
     mainContainer.add(toolbar, { flex: 0 });
 
     // mainsplit, contains the editor splitpane and the info splitpane
@@ -157,4 +163,3 @@ function qooxdooMain(app) {
 
 // Lets register our main method
 qx.registry.registerMainMethod(qooxdooMain);
-//# sourceMappingURL=application.js.map
