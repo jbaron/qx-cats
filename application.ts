@@ -115,7 +115,13 @@ function qooxdooMain(app: qx.application.Standalone) {
       
       // toolbar
       var toolbar = new qx.ui.toolbar.ToolBar();
-      toolbar.add(new qx.ui.toolbar.Button("Run"));
+      var themeButton = new qx.ui.toolbar.Button("Indigo");
+      themeButton.addListener("click", () =>{
+          var a = <any>qx["theme"];
+          a.manager.Meta.getInstance().setTheme(a.Indigo);
+      });
+      toolbar.add(themeButton);
+      
       toolbar.setBackgroundColor("black");
       mainContainer.add(toolbar, { flex : 0 });
 

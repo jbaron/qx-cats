@@ -114,7 +114,13 @@ function qooxdooMain(app) {
     // qooxdoo header
     // toolbar
     var toolbar = new qx.ui.toolbar.ToolBar();
-    toolbar.add(new qx.ui.toolbar.Button("Run"));
+    var themeButton = new qx.ui.toolbar.Button("Indigo");
+    themeButton.addListener("click", function () {
+        var a = qx["theme"];
+        a.manager.Meta.getInstance().setTheme(a.Indigo);
+    });
+    toolbar.add(themeButton);
+
     toolbar.setBackgroundColor("black");
     mainContainer.add(toolbar, { flex: 0 });
 
@@ -151,3 +157,4 @@ function qooxdooMain(app) {
 
 // Lets register our main method
 qx.registry.registerMainMethod(qooxdooMain);
+//# sourceMappingURL=application.js.map
