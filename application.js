@@ -66,6 +66,16 @@ function createTree() {
     return tree;
 }
 
+function createPage(name) {
+    var tab = new qx.ui.tabview.Page(name);
+    tab.setShowCloseButton(close);
+    tab.setLayout(new qx.ui.layout.Canvas());
+    tab.setPadding(0, 0, 0, 0);
+    tab.setMargin(0, 0, 0, 0);
+    tab.setDecorator(null);
+    return tab;
+}
+
 var TabPane = (function (_super) {
     __extends(TabPane, _super);
     function TabPane(tabNames, close) {
@@ -76,12 +86,7 @@ var TabPane = (function (_super) {
         this.setPadding(0, 0, 0, 0);
         this.setContentPadding(1, 0, 0, 0);
         tabNames.forEach(function (name) {
-            var tab = new qx.ui.tabview.Page(name);
-            tab.setShowCloseButton(close);
-            tab.setLayout(new qx.ui.layout.Canvas());
-            tab.setPadding(0, 0, 0, 0);
-            tab.setMargin(0, 0, 0, 0);
-            tab.setDecorator(null);
+            var tab = createPage(name);
             _this.add(tab);
             _this.tabs.push(tab);
         });
@@ -100,6 +105,24 @@ var MyPane = (function (_super) {
     }
     return MyPane;
 })(qx.ui.core.Widget);
+
+function createEditor() {
+    var editor = new qx.ui.core.Widget();
+    editor.addListenerOnce("appear", function () {
+        var container = editor.getContentElement().getDomElement();
+
+        // create the editor
+        var aceEditor = ace.edit(container);
+        aceEditor.getSession().setMode("ace/mode/typescript");
+        editor.addListener("resize", function () {
+            // use a timeout to let the layout queue apply its changes to the dom
+            window.setTimeout(function () {
+                aceEditor.resize();
+            }, 0);
+        });
+    }, this);
+    return editor;
+}
 
 function qooxdooMain(app) {
     var doc = app.getRoot();
@@ -132,17 +155,26 @@ function qooxdooMain(app) {
     // mainsplit, contains the editor splitpane and the info splitpane
     var mainsplit = new qx.ui.splitpane.Pane("horizontal").set({ decorator: null });
     var navigator = new TabPane(["Files", "Outline"]);
-    navigator.getChildren()[0].add(createTree(), { edge: 0 });
+    var fileTree = createTree();
+    navigator.getChildren()[0].add(fileTree, { edge: 0 });
     navigator.getChildren()[1].add(createTree(), { edge: 0 });
 
+    fileTree.addListener("changeSelection", function () {
+        var p = createPage("qqq");
+        p.add(createEditor(), { edge: 0 });
+        sessionTabs.add(p);
+    });
     mainsplit.add(navigator, 1); // navigator
 
     var editorSplit = new qx.ui.splitpane.Pane("vertical").set({ decorator: null });
 
     var infoSplit = new qx.ui.splitpane.Pane("horizontal");
+    var sessionTabs = new TabPane(["file1", "file2", "file3", "file4"], true);
     infoSplit.set({ decorator: null });
-    infoSplit.add(new TabPane(["file1", "file2", "file3", "file4"], true), 4); // editor
-
+    infoSplit.add(sessionTabs, 4); // editor
+    sessionTabs.getChildren().forEach(function (c) {
+        c.add(createEditor(), { edge: 0 });
+    });
     infoSplit.add(new TabPane(["Todo", "Properties"]), 1); // todo
 
     editorSplit.add(infoSplit, 4);
