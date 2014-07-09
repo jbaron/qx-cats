@@ -6,6 +6,91 @@ var __extends = this.__extends || function (d, b) {
 };
 var COL_COUNT = 5;
 var ROW_COUNT = 20;
+var COUNT = 0;
+
+/**
+* Dynamic tree to mimic the file navigation.
+*/
+function createDynamicTree() {
+    var count = 0;
+
+    var rootTop = {
+        label: "Root",
+        children: [],
+        icon: "default",
+        loaded: true
+    };
+
+    var root = qx.data.marshal.Json.createModel(rootTop, true);
+    this.createRandomData(root);
+
+    var tree = new qx.ui.tree.VirtualTree(root, "label", "children");
+
+    tree.setIconPath("icon");
+    tree.setIconOptions({
+        converter: function (value, model) {
+            if (value == "default") {
+                if (model.getChildren != null) {
+                    return "icon/22/places/folder.png";
+                } else {
+                    return "icon/22/mimetypes/office-document.png";
+                }
+            } else {
+                return "demobrowser/demo/icons/loading22.gif";
+            }
+        }
+    });
+
+    var that = this;
+    var delegate = {
+        bindItem: function (controller, item, index) {
+            controller.bindDefaultProperties(item, index);
+
+            controller.bindProperty("", "open", {
+                converter: function (value, model, source, target) {
+                    var isOpen = target.isOpen();
+                    if (isOpen && !value.getLoaded()) {
+                        value.setLoaded(true);
+
+                        qx.event.Timer.once(function () {
+                            value.getChildren().removeAll();
+                            this.createRandomData(value);
+                        }, that, 500);
+
+                        setTimeout(function () {
+                            value.setLoaded(false);
+                            value.getChildren().removeAll();
+                        }, 5000);
+                    }
+
+                    return isOpen;
+                }
+            }, item, index);
+        }
+    };
+    tree.setDelegate(delegate);
+    return tree;
+}
+
+function createRandomData(parent) {
+    for (var i = 0; i < 20; i++) {
+        var node = {
+            label: "Item " + COUNT++,
+            icon: "default",
+            loaded: true
+        };
+
+        if (Math.random() > 0.3) {
+            node["loaded"] = false;
+            node["children"] = [{
+                    label: "Loading",
+                    icon: "loading"
+                }];
+        }
+
+        parent.getChildren().push(qx.data.marshal.Json.createModel(node, true));
+    }
+}
 
 function createRandomRows(rowCount) {
     var rowData = [];
@@ -19,6 +104,9 @@ function createRandomRows(rowCount) {
     return rowData;
 }
 
+/**
+* Create a table to mimic search results
+*/
 function createTable() {
     // Create the initial data
     var rowData = this.createRandomRows(this.ROW_COUNT);
@@ -40,22 +128,26 @@ function createTable() {
     return table;
 }
 
+/**
+* Create a simple Tree to mimic outline functionality
+*/
 function createTree() {
     // create the tree
     var tree = new qx.ui.tree.Tree();
     tree.setDecorator(null);
     tree.setPadding(0, 0, 0, 0);
+    tree.setHideRoot(true);
 
     // create and set the tree root
     var root = new qx.ui.tree.TreeFolder("Desktop");
     tree.setRoot(root);
 
     for (var f = 0; f < 10; f++) {
-        var f1 = new qx.ui.tree.TreeFolder("Folder" + f);
+        var f1 = new qx.ui.tree.TreeFolder("Class-" + f);
         root.add(f1);
 
         for (var i = 0; i < 10; i++) {
-            var f11 = new qx.ui.tree.TreeFile("File" + i + ".png");
+            var f11 = new qx.ui.tree.TreeFile("Method-" + i);
             f1.add(f11);
         }
     }
@@ -66,7 +158,7 @@ function createTree() {
     return tree;
 }
 
-function createPage(name) {
+function createPage(name, close) {
     var tab = new qx.ui.tabview.Page(name);
     tab.setShowCloseButton(close);
     tab.setLayout(new qx.ui.layout.Canvas());
@@ -86,7 +178,7 @@ var TabPane = (function (_super) {
         this.setPadding(0, 0, 0, 0);
         this.setContentPadding(1, 0, 0, 0);
         tabNames.forEach(function (name) {
-            var tab = createPage(name);
+            var tab = createPage(name, close);
             _this.add(tab);
             _this.tabs.push(tab);
         });
@@ -106,6 +198,9 @@ var MyPane = (function (_super) {
     return MyPane;
 })(qx.ui.core.Widget);
 
+/**
+* Insert the ACE editor
+*/
 function createEditor() {
     var editor = new qx.ui.core.Widget();
     editor.addListenerOnce("appear", function () {
@@ -124,6 +219,9 @@ function createEditor() {
     return editor;
 }
 
+/**
+* Setup the main layout
+*/
 function qooxdooMain(app) {
     var doc = app.getRoot();
 
@@ -155,12 +253,12 @@ function qooxdooMain(app) {
     // mainsplit, contains the editor splitpane and the info splitpane
     var mainsplit = new qx.ui.splitpane.Pane("horizontal").set({ decorator: null });
     var navigator = new TabPane(["Files", "Outline"]);
-    var fileTree = createTree();
+    var fileTree = createDynamicTree();
     navigator.getChildren()[0].add(fileTree, { edge: 0 });
     navigator.getChildren()[1].add(createTree(), { edge: 0 });
 
     fileTree.addListener("changeSelection", function () {
-        var p = createPage("qqq");
+        var p = createPage("New file", true);
         p.add(createEditor(), { edge: 0 });
         sessionTabs.add(p);
     });
