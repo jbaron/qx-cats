@@ -9,7 +9,7 @@ constructor() {
         // create the editor
         var aceEditor = ace.edit(container);
         aceEditor.getSession().setMode("ace/mode/typescript");
-        aceEditor.getSession().setValue(fs.readFileSync("./application.ts","UTF8"));
+        aceEditor.getSession().setValue(this.getContent());
         this.addListener("resize", function() {
           // use a timeout to let the layout queue apply its changes to the dom
           window.setTimeout(function() {
@@ -20,4 +20,15 @@ constructor() {
     }, this);
 
 }
+
+private getContent() {
+    try {
+        var fs = require("fs");
+        return fs.readFileSync("./application.ts","UTF8");
+    } catch(err) {
+        return "var i = 0;\n"
+    }
+    
+}
+
 }

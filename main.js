@@ -82,6 +82,7 @@ function qooxdooMain(app) {
     navigator.getChildren()[1].add(new OutlineNavigator(), { edge: 0 });
 
     fileTree.getSelection().addListener("change", function (event) {
+        console.log(event.getData());
         var fileName = event.getData().added[0].getLabel();
         var p = createPage(fileName, true);
         p.add(new SourceEditor(), { edge: 0 });
