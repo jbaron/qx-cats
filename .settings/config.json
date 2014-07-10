@@ -5,7 +5,7 @@
     "buildOnSave": true,
     "compiler": {
         "useDefaultLib": true,
-        "outputOption": "",
+        "outFileOption": "main.js",
         "emitComments": false,
         "generateDeclarationFiles": false,
         "mapSourceFiles": false,

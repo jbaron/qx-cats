@@ -1,172 +1,7 @@
+declare var require:any;
+
+
 declare var ace:any;
-
-var COL_COUNT = 5;
-var ROW_COUNT = 20;
-var COUNT = 0;
-
-/**
- * Dynamic tree to mimic the file navigation.
- */
-function createDynamicTree()
-{
-  var count = 0;
-
-  var rootTop = {
-    label: "Root",
-    children: [],
-    icon: "default",
-    loaded: true
-  };
-  
-  var root = qx.data.marshal.Json.createModel(rootTop, true)
-  this.createRandomData(root);
-
-  var tree = new qx.ui.tree.VirtualTree(root, "label", "children");
-  
-  tree.setIconPath("icon");
-  tree.setIconOptions({
-    converter : function(value, model)
-    {
-      if (value == "default") {
-        if (model.getChildren != null) {
-          return "icon/22/places/folder.png";
-        } else {
-          return "icon/22/mimetypes/office-document.png";
-        }
-      } else {
-        return "demobrowser/demo/icons/loading22.gif";
-      }
-    }
-  });
-
-  var that = this;
-  var delegate = {
-    bindItem : function(controller, item, index)
-    {
-      controller.bindDefaultProperties(item, index);
-
-      controller.bindProperty("", "open",
-      {
-        converter : function(value, model, source, target)
-        {
-          var isOpen = target.isOpen();
-          if (isOpen && !value.getLoaded())
-          {
-            value.setLoaded(true);
-
-            qx.event.Timer.once(function()
-            {
-              value.getChildren().removeAll();
-              this.createRandomData(value);
-            }, that, 500);
-            
-            setTimeout(()=>{
-                value.setLoaded(false);
-                value.getChildren().removeAll();
-            },5000);
-            
-            
-          }
-
-          return isOpen;
-        }
-      }, item, index);
-    }
-  };
-  tree.setDelegate(delegate);
-  return tree;
-}
-
-function createRandomData(parent)
-{
-  for (var i = 0; i < 20; i++) {
-    var node = {
-      label: "Item " + COUNT++,
-      icon: "default",
-      loaded: true
-    }
-
-    if (Math.random() > 0.3)
-    {
-      node["loaded"] = false;
-      node["children"] = [{
-        label: "Loading",
-        icon: "loading"
-      }];
-    }
-
-    parent.getChildren().push(qx.data.marshal.Json.createModel(node, true));
-  }
-}
-
-function createRandomRows(rowCount)
-{
-  var rowData = [];
-  for (var row = 0; row < rowCount; row++)
-  {
-    var row1 = [];
-    for (var i = 0; i < this.COL_COUNT; i++) {
-      row1.push("Cell " + i + "x" + row);
-    }
-    rowData.push(row1);
-  }
-  return rowData;
-}
-
-/**
- * Create a table to mimic search results
- */ 
-function createTable() {
-  // Create the initial data
-  var rowData = this.createRandomRows(this.ROW_COUNT);
-
-  // table model
-  var tableModel = this._tableModel = new qx.ui.table.model.Simple();
-  var headers = [];
-
-  for (var i = 0; i < this.COL_COUNT; i++) {
-    headers.push("Column " + i);
-  }
-  tableModel.setColumns(headers);
-  tableModel.setData(rowData);
-
-  // table
-  var table = new qx.ui.table.Table(tableModel);
-  table.setPadding(0,0,0,0);
-
-  return table;
-}
-
-
-/**
- * Create a simple Tree to mimic outline functionality
- */ 
-function createTree() {
-    // create the tree
-    var tree = new qx.ui.tree.Tree();
-    tree.setDecorator(null);
-    tree.setPadding(0,0,0,0);
-    tree.setHideRoot(true);
-    
-    // create and set the tree root
-    var root = new qx.ui.tree.TreeFolder("Desktop");
-    tree.setRoot(root);
-    
-    for (var f=0;f<10;f++) {
-        var f1 = new qx.ui.tree.TreeFolder("Class-" + f);
-        root.add(f1);
-        // create a third layer
-        for (var i=0;i<10;i++) {
-           var f11 = new qx.ui.tree.TreeFile("Method-" + i); 
-           f1.add(f11);    
-        }
-    }
-    // open the folders
-    root.setOpen(true);
-    f1.setOpen(true);
-    return tree;
-}
-
 
 function createPage(name,close:boolean) {
     var tab = new qx.ui.tabview.Page(name);
@@ -207,26 +42,6 @@ class MyPane extends qx.ui.core.Widget {
     }
 }
 
-/**
- * Insert the ACE editor
- */ 
-function createEditor() {
-    var editor = new qx.ui.core.Widget();
-    editor.addListenerOnce("appear", function() {
-        var container = editor.getContentElement().getDomElement();
-        // create the editor
-        var aceEditor = ace.edit(container);
-        aceEditor.getSession().setMode("ace/mode/typescript");
-        editor.addListener("resize", function() {
-          // use a timeout to let the layout queue apply its changes to the dom
-          window.setTimeout(function() {
-            aceEditor.resize();
-          }, 0);
-        });
-
-    }, this);
-    return editor;
-}
 
 
 /**
@@ -242,7 +57,7 @@ function qooxdooMain(app: qx.application.Standalone) {
       var mainContainer = new qx.ui.container.Composite(layout);
       doc.add(mainContainer, { edge : 0 });
 
-      // qooxdoo header
+     
       
       // toolbar
       var toolbar = new qx.ui.toolbar.ToolBar();
@@ -261,13 +76,14 @@ function qooxdooMain(app: qx.application.Standalone) {
       // mainsplit, contains the editor splitpane and the info splitpane
       var mainsplit = new qx.ui.splitpane.Pane("horizontal").set({ decorator: null });
       var navigator = new TabPane(["Files","Outline"]);
-      var fileTree = createDynamicTree();
+      var fileTree = new FileNavigator();
       navigator.getChildren()[0].add(fileTree, {edge:0});
-      navigator.getChildren()[1].add(createTree(), {edge:0});
+      navigator.getChildren()[1].add(new OutlineNavigator(), {edge:0});
       
-      fileTree.addListener("changeSelection", () =>{
-         var p = createPage("New file", true);
-         p.add(createEditor(), {edge:0});
+      fileTree.getSelection().addListener("change", (event:qx.event.type.Data) =>{
+         var fileName = event.getData().added[0].getLabel();
+         var p = createPage(fileName, true);
+         p.add(new SourceEditor(), {edge:0});
          sessionTabs.add(p);
       });
       mainsplit.add(navigator,1); // navigator
@@ -280,7 +96,7 @@ function qooxdooMain(app: qx.application.Standalone) {
       infoSplit.set({ decorator: null });
       infoSplit.add(sessionTabs,4); // editor
       sessionTabs.getChildren().forEach((c) => {
-          c.add(createEditor(),{edge:0});
+          c.add(new SourceEditor(),{edge:0});
       });
       infoSplit.add(new TabPane(["Todo","Properties"]),1); // todo
       
@@ -288,7 +104,7 @@ function qooxdooMain(app: qx.application.Standalone) {
       
       var problems = new TabPane(["Problems","Search","Console"]);
       editorSplit.add(problems,1); // Info
-      problems.getChildren()[0].add(createTable(),{edge:0} );
+      problems.getChildren()[0].add(new ProblemsResult(),{edge:0} );
       
       mainsplit.add(editorSplit,4); // main area
       
