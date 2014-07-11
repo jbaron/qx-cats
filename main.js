@@ -57,22 +57,7 @@ function qooxdooMain(app) {
     var mainContainer = new qx.ui.container.Composite(layout);
     doc.add(mainContainer, { edge: 0 });
 
-    // toolbar
-    var toolbar = new qx.ui.toolbar.ToolBar();
-
-    var themeButton1 = new qx.ui.toolbar.Button("Modern");
-    themeButton1.addListener("click", function () {
-        qx.theme.manager.Meta.getInstance().setTheme(qx.theme.Modern);
-    });
-
-    var themeButton2 = new qx.ui.toolbar.Button("Indigo");
-    themeButton2.addListener("click", function () {
-        qx.theme.manager.Meta.getInstance().setTheme(qx.theme.Indigo);
-    });
-
-    toolbar.add(themeButton1);
-    toolbar.add(themeButton2);
-    mainContainer.add(toolbar, { flex: 0 });
+    mainContainer.add(new ToolBar(), { flex: 0 });
 
     // mainsplit, contains the editor splitpane and the info splitpane
     var mainsplit = new qx.ui.splitpane.Pane("horizontal").set({ decorator: null });
@@ -82,11 +67,11 @@ function qooxdooMain(app) {
     navigator.getChildren()[1].add(new OutlineNavigator(), { edge: 0 });
 
     fileTree.getSelection().addListener("change", function (event) {
-        console.log(event.getData());
         var fileName = event.getData().added[0].getLabel();
         var p = createPage(fileName, true);
         p.add(new SourceEditor(), { edge: 0 });
         sessionTabs.add(p);
+        consoler.log("Added File");
     });
     mainsplit.add(navigator, 1); // navigator
 
@@ -104,8 +89,11 @@ function qooxdooMain(app) {
     editorSplit.add(infoSplit, 4);
 
     var problems = new TabPane(["Problems", "Search", "Console"]);
+    var consoler = new Console123();
+
     editorSplit.add(problems, 1); // Info
     problems.getChildren()[0].add(new ProblemsResult(), { edge: 0 });
+    problems.getChildren()[2].add(consoler, { edge: 0 });
 
     mainsplit.add(editorSplit, 4); // main area
 
@@ -286,4 +274,67 @@ var SourceEditor = (function (_super) {
         }
     };
     return SourceEditor;
+})(qx.ui.core.Widget);
+var ToolBar = (function (_super) {
+    __extends(ToolBar, _super);
+    function ToolBar() {
+        _super.call(this);
+        this.init();
+    }
+    ToolBar.prototype.init = function () {
+        var iconPath = "./resource/qx/icon/Tango/16/";
+
+        // var  iconPath = "icon/22/";
+        var themeButton1 = new qx.ui.toolbar.Button("Modern");
+        var themeButton2 = new qx.ui.toolbar.Button("Indigo");
+        var sep1 = new qx.ui.toolbar.Separator();
+        var newButton = new qx.ui.toolbar.Button("New", iconPath + "actions/document-new.png");
+        var sep2 = new qx.ui.toolbar.Separator();
+        var copyButton = new qx.ui.toolbar.Button("Copy", iconPath + "actions/edit-copy.png");
+        var cutButton = new qx.ui.toolbar.Button("Cut", iconPath + "actions/edit-cut.png");
+        var pasteButton = new qx.ui.toolbar.Button("Paste", iconPath + "actions/edit-paste.png");
+
+        themeButton1.addListener("click", function () {
+            qx.theme.manager.Meta.getInstance().setTheme(qx.theme.Modern);
+        });
+
+        var themeButton2 = new qx.ui.toolbar.Button("Indigo");
+        themeButton2.addListener("click", function () {
+            qx.theme.manager.Meta.getInstance().setTheme(qx.theme.Indigo);
+        });
+
+        this.add(themeButton1);
+        this.add(themeButton2);
+        this.add(sep1);
+        this.add(newButton);
+        this.add(sep2);
+        this.add(copyButton);
+        this.add(cutButton);
+        this.add(pasteButton);
+    };
+    return ToolBar;
+})(qx.ui.toolbar.ToolBar);
+var Console123 = (function (_super) {
+    __extends(Console123, _super);
+    function Console123() {
+        var _this = this;
+        _super.call(this);
+        this.setDecorator(null);
+        this.addListenerOnce("appear", function () {
+            _this.container = _this.getContentElement().getDomElement();
+        });
+    }
+    Console123.prototype.log = function (msg) {
+        if (this.container) {
+            var t = document.createTextNode(msg);
+            this.container.appendChild(t);
+            this.container.appendChild(document.createElement("br"));
+        }
+    };
+
+    Console123.prototype.clear = function () {
+        if (this.container)
+            this.container.innerHTML = "";
+    };
+    return Console123;
 })(qx.ui.core.Widget);

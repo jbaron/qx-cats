@@ -59,18 +59,7 @@ function qooxdooMain(app: qx.application.Standalone) {
 
      
       
-      // toolbar
-      var toolbar = new qx.ui.toolbar.ToolBar();
-     
-      var themeButton1 = new qx.ui.toolbar.Button("Modern");
-      themeButton1.addListener("click", () =>{ qx.theme.manager.Meta.getInstance().setTheme(qx.theme.Modern);});
-      
-      var themeButton2 = new qx.ui.toolbar.Button("Indigo");
-      themeButton2.addListener("click", () =>{ qx.theme.manager.Meta.getInstance().setTheme(qx.theme.Indigo);});
-      
-      toolbar.add(themeButton1);
-      toolbar.add(themeButton2);
-      mainContainer.add(toolbar, { flex : 0 });
+      mainContainer.add(new ToolBar(), { flex : 0 });
 
 
       // mainsplit, contains the editor splitpane and the info splitpane
@@ -85,6 +74,7 @@ function qooxdooMain(app: qx.application.Standalone) {
          var p = createPage(fileName, true);
          p.add(new SourceEditor(), {edge:0});
          sessionTabs.add(p);
+         consoler.log("Added File");
       });
       mainsplit.add(navigator,1); // navigator
       
@@ -103,8 +93,12 @@ function qooxdooMain(app: qx.application.Standalone) {
       editorSplit.add(infoSplit,4);
       
       var problems = new TabPane(["Problems","Search","Console"]);
+      var consoler = new Console123();
+     
       editorSplit.add(problems,1); // Info
       problems.getChildren()[0].add(new ProblemsResult(),{edge:0} );
+      problems.getChildren()[2].add(consoler,{edge:0} );
+
       
       mainsplit.add(editorSplit,4); // main area
       
