@@ -91,8 +91,9 @@ function qooxdooMain(app) {
     var problems = new TabPane(["Problems", "Search", "Console"]);
     var consoler = new Console123();
 
-    editorSplit.add(problems, 1); // Info
+    editorSplit.add(problems, 2); // Info
     problems.getChildren()[0].add(new ProblemsResult(), { edge: 0 });
+    problems.getChildren()[1].add(new ProblemsResult(), { edge: 0 });
     problems.getChildren()[2].add(consoler, { edge: 0 });
 
     mainsplit.add(editorSplit, 4); // main area
@@ -106,6 +107,30 @@ function qooxdooMain(app) {
 
 // Lets register our main method
 qx.registry.registerMainMethod(qooxdooMain);
+var Console123 = (function (_super) {
+    __extends(Console123, _super);
+    function Console123() {
+        var _this = this;
+        _super.call(this);
+        this.setDecorator(null);
+        this.addListenerOnce("appear", function () {
+            _this.container = _this.getContentElement().getDomElement();
+        });
+    }
+    Console123.prototype.log = function (msg) {
+        if (this.container) {
+            var t = document.createTextNode(msg);
+            this.container.appendChild(t);
+            this.container.appendChild(document.createElement("br"));
+        }
+    };
+
+    Console123.prototype.clear = function () {
+        if (this.container)
+            this.container.innerHTML = "";
+    };
+    return Console123;
+})(qx.ui.core.Widget);
 var rootTop = {
     label: "Root",
     children: [{
@@ -211,34 +236,36 @@ var OutlineNavigator = (function (_super) {
 var ProblemsResult = (function (_super) {
     __extends(ProblemsResult, _super);
     function ProblemsResult() {
-        _super.call(this);
-        this.setDecorator(null);
-
-        // Create the initial data
+        var tableModel = new qx.ui.table.model.Simple();
         var rowData = this.createRandomRows(20);
 
         // table model
-        var tableModel = new qx.ui.table.model.Simple();
-        var headers = [];
+        var headers = ["Message", "File", "Position"];
 
-        for (var i = 0; i < 5; i++) {
-            headers.push("Column " + i);
-        }
         tableModel.setColumns(headers);
         tableModel.setData(rowData);
 
-        // table
-        this.setTableModel(tableModel);
+        var custom = {
+            tableColumnModel: function (obj) {
+                return new qx.ui.table.columnmodel.Resize(obj);
+            }
+        };
+        _super.call(this, tableModel, custom);
+        this.setDecorator(null);
 
+        // Create the initial data
+        // table
+        // this.setTableModel(tableModel, custom);
         this.setPadding(0, 0, 0, 0);
     }
     ProblemsResult.prototype.createRandomRows = function (rowCount) {
         var rowData = [];
         for (var row = 0; row < rowCount; row++) {
-            var row1 = [];
-            for (var i = 0; i < 5; i++) {
-                row1.push("Cell " + i + "x" + row);
-            }
+            var row1 = [
+                "Cannot find method XYZ",
+                "File-2",
+                "12:10"
+            ];
             rowData.push(row1);
         }
         return rowData;
@@ -314,27 +341,3 @@ var ToolBar = (function (_super) {
     };
     return ToolBar;
 })(qx.ui.toolbar.ToolBar);
-var Console123 = (function (_super) {
-    __extends(Console123, _super);
-    function Console123() {
-        var _this = this;
-        _super.call(this);
-        this.setDecorator(null);
-        this.addListenerOnce("appear", function () {
-            _this.container = _this.getContentElement().getDomElement();
-        });
-    }
-    Console123.prototype.log = function (msg) {
-        if (this.container) {
-            var t = document.createTextNode(msg);
-            this.container.appendChild(t);
-            this.container.appendChild(document.createElement("br"));
-        }
-    };
-
-    Console123.prototype.clear = function () {
-        if (this.container)
-            this.container.innerHTML = "";
-    };
-    return Console123;
-})(qx.ui.core.Widget);

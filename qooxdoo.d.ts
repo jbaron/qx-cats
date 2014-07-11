@@ -10164,7 +10164,7 @@ class Resize extends qx.ui.table.columnmodel.Basic {
  trc(hint:string,messageId:string,varargs:any):qx.locale.LocalizedString;
  trn(singularMessageId:string,pluralMessageId:string,count:number,varargs:any):qx.locale.LocalizedString;
  trnc(hint:string,singularMessageId:string,pluralMessageId:string,count:number,varargs:any):qx.locale.LocalizedString;
-constructor ();
+constructor (obj:any);
  _addResetColumnWidthButton(event:qx.event.type.Data):void;
  _applyBehavior(value:qx.ui.table.columnmodel.resizebehavior.Abstract,old:qx.ui.table.columnmodel.resizebehavior.Abstract):void;
  _onappear(event:qx.event.type.Event):void;

@@ -95,8 +95,9 @@ function qooxdooMain(app: qx.application.Standalone) {
       var problems = new TabPane(["Problems","Search","Console"]);
       var consoler = new Console123();
      
-      editorSplit.add(problems,1); // Info
+      editorSplit.add(problems,2); // Info
       problems.getChildren()[0].add(new ProblemsResult(),{edge:0} );
+      problems.getChildren()[1].add(new ProblemsResult(),{edge:0} );
       problems.getChildren()[2].add(consoler,{edge:0} );
 
       
