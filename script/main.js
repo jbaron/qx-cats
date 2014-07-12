@@ -32,98 +32,131 @@ var TabPane = (function (_super) {
     return TabPane;
 })(qx.ui.tabview.TabView);
 
-var MyPane = (function (_super) {
-    __extends(MyPane, _super);
-    function MyPane(color) {
-        _super.call(this);
-        this.set({ backgroundColor: color });
-
-        this.addListener("dblclick", function (e) {
-        });
+var Ide = (function () {
+    function Ide(app) {
+        this.doc = app.getRoot();
     }
-    return MyPane;
-})(qx.ui.core.Widget);
+    Ide.prototype.layout = function () {
+        // container layout
+        var layout = new qx.ui.layout.VBox();
+
+        // main container
+        var mainContainer = new qx.ui.container.Composite(layout);
+        this.doc.add(mainContainer, { edge: 0 });
+
+        this.toolBar = new ToolBar();
+
+        mainContainer.add(this.toolBar, { flex: 0 });
+
+        // mainsplit, contains the editor splitpane and the info splitpane
+        var mainsplit = new qx.ui.splitpane.Pane("horizontal").set({ decorator: null });
+        this.navigatorPane = new TabPane(["Files", "Outline"]);
+        var fileTree = new FileNavigator();
+        this.navigatorPane.getChildren()[0].add(fileTree, { edge: 0 });
+        this.navigatorPane.getChildren()[1].add(new OutlineNavigator(), { edge: 0 });
+
+        fileTree.getSelection().addListener("change", function (event) {
+            var fileName = event.getData().added[0].getLabel();
+            var p = createPage(fileName, true);
+            p.add(new SourceEditor(), { edge: 0 });
+            sessionTabs.add(p);
+            consoler.log("Added File " + fileName);
+        });
+        mainsplit.add(this.navigatorPane, 1); // navigator
+
+        var editorSplit = new qx.ui.splitpane.Pane("vertical").set({ decorator: null });
+
+        var infoSplit = new qx.ui.splitpane.Pane("horizontal");
+        var sessionTabs = new TabPane(["file1", "file2", "file3", "file4"], true);
+        infoSplit.set({ decorator: null });
+        infoSplit.add(sessionTabs, 4); // editor
+        sessionTabs.getChildren().forEach(function (c) {
+            c.add(new SourceEditor(), { edge: 0 });
+        });
+        infoSplit.add(new TabPane(["Todo", "Properties"]), 1); // todo
+
+        editorSplit.add(infoSplit, 4);
+
+        // Setup Problems section
+        this.problemPane = new TabPane(["Console", "Problems", "Search"]);
+        var consoler = new Console123();
+
+        editorSplit.add(this.problemPane, 2); // Info
+        this.problemPane.getChildren()[0].add(consoler, { edge: 0 });
+        this.problemPane.getChildren()[1].add(new ProblemsResult(), { edge: 0 });
+        this.problemPane.getChildren()[2].add(new ProblemsResult(), { edge: 0 });
+
+        mainsplit.add(editorSplit, 4); // main area
+
+        mainContainer.add(mainsplit, { flex: 1 });
+
+        // Setup status bar
+        this.statusBar = new qx.ui.toolbar.ToolBar();
+        this.statusBar.add(new qx.ui.toolbar.Button("1:1"));
+        mainContainer.add(this.statusBar, { flex: 0 });
+    };
+    return Ide;
+})();
+
+var IDE;
 
 /**
 * Setup the main layout
 */
 function qooxdooMain(app) {
-    qx.core.Environment.add("qx.nativeScrollBars", true);
-    var doc = app.getRoot();
-
-    // container layout
-    var layout = new qx.ui.layout.VBox();
-
-    // main container
-    var mainContainer = new qx.ui.container.Composite(layout);
-    doc.add(mainContainer, { edge: 0 });
-
-    mainContainer.add(new ToolBar(), { flex: 0 });
-
-    // mainsplit, contains the editor splitpane and the info splitpane
-    var mainsplit = new qx.ui.splitpane.Pane("horizontal").set({ decorator: null });
-    var navigator = new TabPane(["Files", "Outline"]);
-    var fileTree = new FileNavigator();
-    navigator.getChildren()[0].add(fileTree, { edge: 0 });
-    navigator.getChildren()[1].add(new OutlineNavigator(), { edge: 0 });
-
-    fileTree.getSelection().addListener("change", function (event) {
-        var fileName = event.getData().added[0].getLabel();
-        var p = createPage(fileName, true);
-        p.add(new SourceEditor(), { edge: 0 });
-        sessionTabs.add(p);
-        consoler.log("Added File");
-    });
-    mainsplit.add(navigator, 1); // navigator
-
-    var editorSplit = new qx.ui.splitpane.Pane("vertical").set({ decorator: null });
-
-    var infoSplit = new qx.ui.splitpane.Pane("horizontal");
-    var sessionTabs = new TabPane(["file1", "file2", "file3", "file4"], true);
-    infoSplit.set({ decorator: null });
-    infoSplit.add(sessionTabs, 4); // editor
-    sessionTabs.getChildren().forEach(function (c) {
-        c.add(new SourceEditor(), { edge: 0 });
-    });
-    infoSplit.add(new TabPane(["Todo", "Properties"]), 1); // todo
-
-    editorSplit.add(infoSplit, 4);
-
-    var problems = new TabPane(["Problems", "Search", "Console"]);
-    var consoler = new Console123();
-
-    editorSplit.add(problems, 2); // Info
-    problems.getChildren()[0].add(new ProblemsResult(), { edge: 0 });
-    problems.getChildren()[1].add(new ProblemsResult(), { edge: 0 });
-    problems.getChildren()[2].add(consoler, { edge: 0 });
-
-    mainsplit.add(editorSplit, 4); // main area
-
-    mainContainer.add(mainsplit, { flex: 1 });
-
-    var statusbar = new qx.ui.toolbar.ToolBar();
-    statusbar.add(new qx.ui.toolbar.Button("1:1"));
-    mainContainer.add(statusbar, { flex: 0 });
+    IDE = new Ide(app);
+    IDE.layout();
 }
 
 // Lets register our main method
 qx.registry.registerMainMethod(qooxdooMain);
+/**
+* Basic logging widget that can be used to write
+* logging information that are of interest to the user.
+*
+*/
 var Console123 = (function (_super) {
     __extends(Console123, _super);
     function Console123() {
         var _this = this;
         _super.call(this);
+        console.log("Scroll container123");
+
         this.setDecorator(null);
+        var w = new qx.ui.core.Widget();
+        this.add(w);
+
         this.addListenerOnce("appear", function () {
-            _this.container = _this.getContentElement().getDomElement();
+            _this.container = w.getContentElement().getDomElement();
         });
+        this.setContextMenu(this.createContextMenu());
     }
-    Console123.prototype.log = function (msg) {
+    Console123.prototype.log = function (msg, printTime, severity) {
+        if (typeof printTime === "undefined") { printTime = false; }
+        if (typeof severity === "undefined") { severity = 0; }
         if (this.container) {
-            var t = document.createTextNode(msg);
-            this.container.appendChild(t);
-            this.container.appendChild(document.createElement("br"));
+            var prefix = "";
+            if (printTime) {
+                var dt = new Date();
+                prefix = dt.toLocaleTimeString() + " ";
+            }
+            this.container.innerText += prefix + msg + "\n";
+            this.container.scrollTop = this.container.scrollHeight; // Scroll to bottom
+            // var t = document.createTextNode(prefix + msg);
+            // this.container.appendChild(t);
+            // this.container.appendChild(document.createElement("br"));
         }
+    };
+
+    Console123.prototype.createContextMenu = function () {
+        var _this = this;
+        var menu = new qx.ui.menu.Menu();
+        var item1 = new qx.ui.menu.Button("Clear");
+        item1.addListener("execute", function () {
+            _this.clear();
+        });
+        menu.add(item1);
+        return menu;
     };
 
     Console123.prototype.clear = function () {
@@ -131,7 +164,7 @@ var Console123 = (function (_super) {
             this.container.innerHTML = "";
     };
     return Console123;
-})(qx.ui.core.Widget);
+})(qx.ui.container.Scroll);
 var rootTop = {
     label: "Root",
     children: [{
@@ -142,6 +175,9 @@ var rootTop = {
     loaded: false
 };
 
+/**
+* File navigator widget for CATS
+*/
 var FileNavigator = (function (_super) {
     __extends(FileNavigator, _super);
     function FileNavigator() {
@@ -202,11 +238,11 @@ var FileNavigator = (function (_super) {
     FileNavigator.COUNT = 0;
     return FileNavigator;
 })(qx.ui.tree.VirtualTree);
+/**
+* Create a simple Tree to mimic outline functionality
+*/
 var OutlineNavigator = (function (_super) {
     __extends(OutlineNavigator, _super);
-    /**
-    * Create a simple Tree to mimic outline functionality
-    */
     function OutlineNavigator() {
         _super.call(this);
 
@@ -234,6 +270,9 @@ var OutlineNavigator = (function (_super) {
     }
     return OutlineNavigator;
 })(qx.ui.tree.Tree);
+/**
+* This table displays problems and search result
+*/
 var ProblemsResult = (function (_super) {
     __extends(ProblemsResult, _super);
     function ProblemsResult() {
@@ -254,9 +293,6 @@ var ProblemsResult = (function (_super) {
         _super.call(this, tableModel, custom);
         this.setDecorator(null);
 
-        // Create the initial data
-        // table
-        // this.setTableModel(tableModel, custom);
         this.setPadding(0, 0, 0, 0);
     }
     ProblemsResult.prototype.createRandomRows = function (rowCount) {
@@ -273,6 +309,9 @@ var ProblemsResult = (function (_super) {
     };
     return ProblemsResult;
 })(qx.ui.table.Table);
+/**
+* Simple wrapper around ACE editor
+*/
 var SourceEditor = (function (_super) {
     __extends(SourceEditor, _super);
     function SourceEditor() {
@@ -303,11 +342,14 @@ var SourceEditor = (function (_super) {
     };
     return SourceEditor;
 })(qx.ui.core.Widget);
+/**
+* The toolbar for CATS
+*/
 var ToolBar = (function (_super) {
     __extends(ToolBar, _super);
     function ToolBar() {
         _super.call(this);
-        this.themes = ["Modern", "Indigo", "Simple"];
+        this.themes = ["Modern", "Indigo", "Simple", "Classic"];
         this.init();
     }
     ToolBar.prototype.init = function () {
@@ -329,6 +371,14 @@ var ToolBar = (function (_super) {
         var copyButton = new qx.ui.toolbar.Button("Copy", iconPath + "actions/edit-copy.png");
         var cutButton = new qx.ui.toolbar.Button("Cut", iconPath + "actions/edit-cut.png");
         var pasteButton = new qx.ui.toolbar.Button("Paste", iconPath + "actions/edit-paste.png");
+        var sep3 = new qx.ui.toolbar.Separator();
+        var togglePane1 = new qx.ui.toolbar.Button("Toggle Pane");
+        togglePane1.addListener("click", function () {
+            if (IDE.navigatorPane.isVisible())
+                IDE.navigatorPane.exclude();
+            else
+                IDE.navigatorPane.show();
+        });
 
         this.add(sep1);
         this.add(newButton);
@@ -336,6 +386,8 @@ var ToolBar = (function (_super) {
         this.add(copyButton);
         this.add(cutButton);
         this.add(pasteButton);
+        this.add(sep3);
+        this.add(togglePane1);
     };
     return ToolBar;
 })(qx.ui.toolbar.ToolBar);

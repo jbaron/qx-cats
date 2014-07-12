@@ -7,7 +7,10 @@ var rootTop = {
     icon: "default",
     loaded: false
 };
-  
+
+/**
+ * File navigator widget for CATS
+ */ 
 class FileNavigator extends qx.ui.tree.VirtualTree {
 
         static COUNT = 0;

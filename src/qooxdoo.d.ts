@@ -8906,7 +8906,7 @@ constructor ();
 }
 declare module qx.ui.menu {
 class Button extends qx.ui.menu.AbstractButton {
-constructor (label:string,icon:string,command:qx.ui.core.Command,menu:qx.ui.menu.Menu);
+constructor (label:string,icon?:string,command?:qx.ui.core.Command,menu?:qx.ui.menu.Menu);
 }
 }
 declare module qx.ui.menu {
