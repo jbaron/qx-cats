@@ -24,7 +24,7 @@ constructor() {
 private getContent() {
     try {
         var fs = require("fs");
-        return fs.readFileSync("./application.ts","UTF8");
+        return fs.readFileSync("./src/application.ts","UTF8");
     } catch(err) {
         return "var i = 0;\n"
     }

@@ -48,6 +48,7 @@ class MyPane extends qx.ui.core.Widget {
  * Setup the main layout
  */ 
 function qooxdooMain(app: qx.application.Standalone) {
+    qx.core.Environment.add("qx.nativeScrollBars", true);
      var doc = <qx.ui.container.Composite>app.getRoot();
    
     // container layout

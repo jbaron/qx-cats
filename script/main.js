@@ -48,6 +48,7 @@ var MyPane = (function (_super) {
 * Setup the main layout
 */
 function qooxdooMain(app) {
+    qx.core.Environment.add("qx.nativeScrollBars", true);
     var doc = app.getRoot();
 
     // container layout
@@ -295,7 +296,7 @@ var SourceEditor = (function (_super) {
     SourceEditor.prototype.getContent = function () {
         try  {
             var fs = require("fs");
-            return fs.readFileSync("./application.ts", "UTF8");
+            return fs.readFileSync("./src/application.ts", "UTF8");
         } catch (err) {
             return "var i = 0;\n";
         }
@@ -306,14 +307,22 @@ var ToolBar = (function (_super) {
     __extends(ToolBar, _super);
     function ToolBar() {
         _super.call(this);
+        this.themes = ["Modern", "Indigo", "Simple"];
         this.init();
     }
     ToolBar.prototype.init = function () {
+        var _this = this;
         var iconPath = "./resource/qx/icon/Tango/16/";
 
         // var  iconPath = "icon/22/";
-        var themeButton1 = new qx.ui.toolbar.Button("Modern");
-        var themeButton2 = new qx.ui.toolbar.Button("Indigo");
+        this.themes.forEach(function (theme) {
+            var themeButton = new qx.ui.toolbar.Button(theme);
+            themeButton.addListener("click", function () {
+                qx.theme.manager.Meta.getInstance().setTheme(qx.theme[theme]);
+            });
+            _this.add(themeButton);
+        });
+
         var sep1 = new qx.ui.toolbar.Separator();
         var newButton = new qx.ui.toolbar.Button("New", iconPath + "actions/document-new.png");
         var sep2 = new qx.ui.toolbar.Separator();
@@ -321,17 +330,6 @@ var ToolBar = (function (_super) {
         var cutButton = new qx.ui.toolbar.Button("Cut", iconPath + "actions/edit-cut.png");
         var pasteButton = new qx.ui.toolbar.Button("Paste", iconPath + "actions/edit-paste.png");
 
-        themeButton1.addListener("click", function () {
-            qx.theme.manager.Meta.getInstance().setTheme(qx.theme.Modern);
-        });
-
-        var themeButton2 = new qx.ui.toolbar.Button("Indigo");
-        themeButton2.addListener("click", function () {
-            qx.theme.manager.Meta.getInstance().setTheme(qx.theme.Indigo);
-        });
-
-        this.add(themeButton1);
-        this.add(themeButton2);
         this.add(sep1);
         this.add(newButton);
         this.add(sep2);
