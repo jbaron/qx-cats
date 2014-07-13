@@ -1,37 +1,7 @@
-var __extends = this.__extends || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
-};
-function createPage(name, close) {
-    var tab = new qx.ui.tabview.Page(name);
-    tab.setShowCloseButton(close);
-    tab.setLayout(new qx.ui.layout.Canvas());
-    tab.setPadding(0, 0, 0, 0);
-    tab.setMargin(0, 0, 0, 0);
-    tab.setDecorator(null);
-    return tab;
-}
-
-var TabPane = (function (_super) {
-    __extends(TabPane, _super);
-    function TabPane(tabNames, close) {
-        if (typeof close === "undefined") { close = false; }
-        var _this = this;
-        _super.call(this);
-        this.tabs = [];
-        this.setPadding(0, 0, 0, 0);
-        this.setContentPadding(1, 0, 0, 0);
-        tabNames.forEach(function (name) {
-            var tab = createPage(name, close);
-            _this.add(tab);
-            _this.tabs.push(tab);
-        });
-    }
-    return TabPane;
-})(qx.ui.tabview.TabView);
-
+/**
+* The main IDE class that contains the layout and various
+* components that make up CATS
+*/
 var Ide = (function () {
     function Ide(app) {
         this.doc = app.getRoot();
@@ -51,26 +21,19 @@ var Ide = (function () {
         // mainsplit, contains the editor splitpane and the info splitpane
         var mainsplit = new qx.ui.splitpane.Pane("horizontal").set({ decorator: null });
         this.navigatorPane = new TabPane(["Files", "Outline"]);
-        var fileTree = new FileNavigator();
+        var fileTree = new FileNavigator(process.cwd());
         this.navigatorPane.getChildren()[0].add(fileTree, { edge: 0 });
         this.navigatorPane.getChildren()[1].add(new OutlineNavigator(), { edge: 0 });
 
-        fileTree.getSelection().addListener("change", function (event) {
-            var fileName = event.getData().added[0].getLabel();
-            var p = createPage(fileName, true);
-            p.add(new SourceEditor(), { edge: 0 });
-            sessionTabs.add(p);
-            consoler.log("Added File " + fileName);
-        });
         mainsplit.add(this.navigatorPane, 1); // navigator
 
         var editorSplit = new qx.ui.splitpane.Pane("vertical").set({ decorator: null });
 
         var infoSplit = new qx.ui.splitpane.Pane("horizontal");
-        var sessionTabs = new TabPane(["file1", "file2", "file3", "file4"], true);
+        this.sessionTabs = new TabPane(["file1", "file2", "file3", "file4"], true);
         infoSplit.set({ decorator: null });
-        infoSplit.add(sessionTabs, 4); // editor
-        sessionTabs.getChildren().forEach(function (c) {
+        infoSplit.add(this.sessionTabs, 4); // editor
+        this.sessionTabs.getChildren().forEach(function (c) {
             c.add(new SourceEditor(), { edge: 0 });
         });
         infoSplit.add(new TabPane(["Todo", "Properties"]), 1); // todo
@@ -78,14 +41,18 @@ var Ide = (function () {
         editorSplit.add(infoSplit, 4);
 
         // Setup Problems section
-        this.problemPane = new TabPane(["Console", "Problems", "Search"]);
-        var consoler = new Console123();
+        this.problemPane = new TabPane(["Problems", "Search", "Console"]);
+        this.console = new Console123();
 
         editorSplit.add(this.problemPane, 2); // Info
-        this.problemPane.getChildren()[0].add(consoler, { edge: 0 });
-        this.problemPane.getChildren()[1].add(new ProblemsResult(), { edge: 0 });
-        this.problemPane.getChildren()[2].add(new ProblemsResult(), { edge: 0 });
 
+        this.problemPane.getChildren()[0].add(new ProblemsResult(), { edge: 0 });
+        this.problemPane.getChildren()[1].add(new ProblemsResult(), { edge: 0 });
+        this.problemPane.getChildren()[2].add(this.console, { edge: 0 });
+
+        this.problemPane.select("Console");
+
+        // this.problemPane.setSelection([this.problemPane.getChildren()[2]]);
         mainsplit.add(editorSplit, 4); // main area
 
         mainContainer.add(mainsplit, { flex: 1 });
@@ -101,7 +68,7 @@ var Ide = (function () {
 var IDE;
 
 /**
-* Setup the main layout
+* This function is called from Qooxdoo to start everything
 */
 function qooxdooMain(app) {
     IDE = new Ide(app);
@@ -110,6 +77,12 @@ function qooxdooMain(app) {
 
 // Lets register our main method
 qx.registry.registerMainMethod(qooxdooMain);
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
 /**
 * Basic logging widget that can be used to write
 * logging information that are of interest to the user.
@@ -120,7 +93,6 @@ var Console123 = (function (_super) {
     function Console123() {
         var _this = this;
         _super.call(this);
-        console.log("Scroll container123");
 
         this.setDecorator(null);
         var w = new qx.ui.core.Widget();
@@ -165,13 +137,18 @@ var Console123 = (function (_super) {
     };
     return Console123;
 })(qx.ui.container.Scroll);
+var fs = require("fs");
+var path = require("path");
+
 var rootTop = {
-    label: "Root",
+    label: "qx-cats",
+    fullPath: "/Users/peter/Development/qx-cats/",
+    directory: true,
     children: [{
             label: "Loading",
-            icon: "loading"
+            icon: "loading",
+            directory: false
         }],
-    icon: "default",
     loaded: false
 };
 
@@ -180,14 +157,83 @@ var rootTop = {
 */
 var FileNavigator = (function (_super) {
     __extends(FileNavigator, _super);
-    function FileNavigator() {
+    function FileNavigator(directory) {
+        var _this = this;
+        rootTop.fullPath = directory;
+        rootTop.label = path.basename(directory);
         var root = qx.data.marshal.Json.createModel(rootTop, true);
         _super.call(this, root, "label", "children");
 
         this.setDecorator(null);
 
         this.setupDelegate();
+        this.setContextMenu(this.createContextMenu());
+        this.setup();
+
+        console.log("Icon path:" + this.getIconPath());
+        this.addListener("dblclick", function () {
+            var fileName = _this.getSelectedFile();
+            if (fileName) {
+                var p = IDE.sessionTabs.addPage(fileName, true);
+                p.add(new SourceEditor(), { edge: 0 });
+                IDE.console.log("Added File " + fileName);
+            }
+        });
     }
+    FileNavigator.prototype.getSelectedFile = function () {
+        var item = this.getSelection().getItem(0);
+        if (!item)
+            return null;
+        if (!item.getDirectory)
+            return null;
+        if (!item.getDirectory()) {
+            return item.getLabel();
+        }
+        return null;
+    };
+
+    FileNavigator.prototype.getSelectedItem = function () {
+        console.log(this.getSelection().getItem(0));
+        var fileName = this.getSelection().getItem(0).getLabel();
+        return fileName;
+    };
+
+    FileNavigator.prototype.setup = function () {
+        this.setIconPath("");
+        this.setIconOptions({
+            converter: function (value, model) {
+                // console.log(value);
+                // console.log(value.getFullPath());
+                if (value.getDirectory()) {
+                    return "./resource/qx/icon/Tango/16/places/folder.png";
+                }
+                return "./resource/qx/icon/Tango/16/mimetypes/text-plain.png";
+            }
+        });
+    };
+
+    FileNavigator.prototype.createContextMenu = function () {
+        var _this = this;
+        var menu = new qx.ui.menu.Menu();
+        var refreshButton = new qx.ui.menu.Button("Refresh");
+        var renameButton = new qx.ui.menu.Button("Rename");
+
+        var deleteButton = new qx.ui.menu.Button("Delete");
+        deleteButton.addListener("execute", function () {
+            alert("going to delete " + _this.getSelectedItem());
+        });
+
+        var newFileButton = new qx.ui.menu.Button("New File");
+        var newDirButton = new qx.ui.menu.Button("New Directory");
+
+        menu.add(refreshButton);
+        menu.add(renameButton);
+        menu.add(deleteButton);
+        menu.add(newFileButton);
+        menu.add(newDirButton);
+        return menu;
+    };
+
     FileNavigator.prototype.setupDelegate = function () {
         var delegate = {
             bindItem: function (controller, item, index) {
@@ -199,10 +245,10 @@ var FileNavigator = (function (_super) {
                         if (isOpen && !value.getLoaded()) {
                             value.setLoaded(true);
 
-                            qx.event.Timer.once(function () {
+                            setTimeout(function () {
                                 value.getChildren().removeAll();
-                                FileNavigator.createRandomData(value);
-                            }, this, 500);
+                                FileNavigator.readDir(value);
+                            }, 0);
                         }
 
                         return isOpen;
@@ -213,27 +259,29 @@ var FileNavigator = (function (_super) {
         this.setDelegate(delegate);
     };
 
-    FileNavigator.createRandomData = function (parent) {
-        for (var i = 0; i < 10; i++) {
+    /**
+    * Read the files from a directory
+    * @param directory The directory name that should be read
+    */
+    FileNavigator.readDir = function (parent) {
+        var directory = parent.getFullPath();
+        var files = fs.readdirSync(directory);
+        files.forEach(function (file) {
+            var fullName = path.join(directory, file);
+            var stats = fs.statSync(fullName);
             var node = {
-                label: "Folder-" + ++FileNavigator.COUNT,
-                icon: "default",
-                loaded: false,
-                children: [{
+                label: file,
+                fullPath: fullName,
+                loaded: !stats.isDirectory(),
+                directory: stats.isDirectory(),
+                children: stats.isDirectory() ? [{
                         label: "Loading",
-                        icon: "loading"
-                    }]
+                        icon: "loading",
+                        directory: false
+                    }] : null
             };
-
-            if (i > 3) {
-                node.label = "File-" + FileNavigator.COUNT;
-                node.icon = "loading";
-                node.loaded = true;
-                node.children = [];
-            }
-
             parent.getChildren().push(qx.data.marshal.Json.createModel(node, true));
-        }
+        });
     };
     FileNavigator.COUNT = 0;
     return FileNavigator;
@@ -309,6 +357,24 @@ var ProblemsResult = (function (_super) {
     };
     return ProblemsResult;
 })(qx.ui.table.Table);
+var Sessions = (function () {
+    function Sessions(sessions) {
+        this.sessions = sessions;
+    }
+    Sessions.prototype.containsSession = function (session) {
+        return this.sessions.indexOf(session) > -1;
+    };
+
+    Sessions.prototype.add = function (session) {
+        if (this.containsSession(session)) {
+            IDE.sessionTabs.activate;
+        } else {
+            this.sessions.push(session);
+            IDE.sessionTabs.addPage(session.name, true);
+        }
+    };
+    return Sessions;
+})();
 /**
 * Simple wrapper around ACE editor
 */
@@ -321,16 +387,19 @@ var SourceEditor = (function (_super) {
             var container = _this.getContentElement().getDomElement();
 
             // create the editor
-            var aceEditor = ace.edit(container);
-            aceEditor.getSession().setMode("ace/mode/typescript");
-            aceEditor.getSession().setValue(_this.getContent());
+            _this.aceEditor = ace.edit(container);
+            _this.aceEditor.getSession().setMode("ace/mode/typescript");
+            _this.aceEditor.getSession().setValue(_this.getContent());
+            _this.aceEditor.getSession();
+
             _this.addListener("resize", function () {
                 // use a timeout to let the layout queue apply its changes to the dom
                 window.setTimeout(function () {
-                    aceEditor.resize();
+                    _this.aceEditor.resize();
                 }, 0);
             });
         }, this);
+        this.setContextMenu(this.createContextMenu());
     }
     SourceEditor.prototype.getContent = function () {
         try  {
@@ -340,8 +409,66 @@ var SourceEditor = (function (_super) {
             return "var i = 0;\n";
         }
     };
+
+    SourceEditor.prototype.createContextMenu = function () {
+        var menu = new qx.ui.menu.Menu();
+        var item1 = new qx.ui.menu.Button("Goto Declaration");
+        var item2 = new qx.ui.menu.Button("Find reference");
+        menu.add(item1);
+        menu.add(item2);
+        return menu;
+    };
     return SourceEditor;
 })(qx.ui.core.Widget);
+var TabPane = (function (_super) {
+    __extends(TabPane, _super);
+    function TabPane(tabNames, close) {
+        if (typeof close === "undefined") { close = false; }
+        var _this = this;
+        _super.call(this);
+        this.setPadding(0, 0, 0, 0);
+        this.setContentPadding(1, 0, 0, 0);
+        tabNames.forEach(function (name) {
+            _this.addPage(name, close);
+        });
+    }
+    TabPane.prototype.addPage = function (name, close) {
+        if (typeof close === "undefined") { close = false; }
+        var tab = new qx.ui.tabview.Page(name);
+        tab.setShowCloseButton(close);
+        tab.setLayout(new qx.ui.layout.Canvas());
+        tab.setPadding(0, 0, 0, 0);
+        tab.setMargin(0, 0, 0, 0);
+        tab.setDecorator(null);
+        this.add(tab);
+        return tab;
+    };
+
+    TabPane.prototype.changed = function (id) {
+        var p = this.getPage(id);
+        var iconPath = "./resource/qx/icon/Tango/16/";
+        p.setIcon(iconPath + "status/dialog-information.png");
+    };
+
+    TabPane.prototype.getPage = function (id) {
+        var pages = this.getChildren();
+        for (var i = 0; i < pages.length; i++) {
+            var page = pages[i];
+            console.log(page.getLabel());
+            if (page.getLabel() === id) {
+                return page;
+            }
+        }
+        return null;
+    };
+
+    TabPane.prototype.select = function (id) {
+        var page = this.getPage(id);
+        if (page)
+            this.setSelection([page]);
+    };
+    return TabPane;
+})(qx.ui.tabview.TabView);
 /**
 * The toolbar for CATS
 */
@@ -380,6 +507,11 @@ var ToolBar = (function (_super) {
                 IDE.navigatorPane.show();
         });
 
+        var changeButton = new qx.ui.toolbar.Button("Change File");
+        changeButton.addListener("click", function () {
+            IDE.sessionTabs.changed("file1");
+        });
+
         this.add(sep1);
         this.add(newButton);
         this.add(sep2);
@@ -388,6 +520,7 @@ var ToolBar = (function (_super) {
         this.add(pasteButton);
         this.add(sep3);
         this.add(togglePane1);
+        this.add(changeButton);
     };
     return ToolBar;
 })(qx.ui.toolbar.ToolBar);

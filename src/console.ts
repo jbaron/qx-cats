@@ -9,8 +9,7 @@ class Console123 extends qx.ui.container.Scroll /* qx.ui.core.Widget */ {
  
     constructor() {
         super();
-        console.log("Scroll container123");
-        
+
         this.setDecorator(null);
         var w = new qx.ui.core.Widget();
         this.add(w);

@@ -36,6 +36,12 @@ class ToolBar extends qx.ui.toolbar.ToolBar {
                 IDE.navigatorPane.show();
         });
 
+
+        var changeButton = new qx.ui.toolbar.Button("Change File");
+        changeButton.addListener("click", () => { 
+            IDE.sessionTabs.changed("file1");    
+        });
+
         this.add(sep1);
         this.add(newButton);
         this.add(sep2);
@@ -44,6 +50,7 @@ class ToolBar extends qx.ui.toolbar.ToolBar {
         this.add(pasteButton);
         this.add(sep3);
         this.add(togglePane1);
+        this.add(changeButton);
     }
 
 }

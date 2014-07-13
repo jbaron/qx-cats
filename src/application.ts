@@ -1,39 +1,18 @@
 declare var require: any;
-
-
 declare var ace: any;
+declare var process;
 
-function createPage(name, close: boolean) {
-    var tab = new qx.ui.tabview.Page(name);
-    tab.setShowCloseButton(close);
-    tab.setLayout(new qx.ui.layout.Canvas());
-    tab.setPadding(0, 0, 0, 0);
-    tab.setMargin(0, 0, 0, 0);
-    tab.setDecorator(null);
-    return tab;
-}
-
-class TabPane extends qx.ui.tabview.TabView {
-
-    private tabs = [];
-
-    constructor(tabNames: string[], close= false) {
-        super();
-        this.setPadding(0, 0, 0, 0);
-        this.setContentPadding(1, 0, 0, 0);
-        tabNames.forEach((name) => {
-            var tab = createPage(name, close);
-            this.add(tab);
-            this.tabs.push(tab);
-        });
-    }
-}
-
+/**
+ * The main IDE class that contains the layout and various 
+ * components that make up CATS
+ */
 class Ide {
     navigatorPane: TabPane;
     problemPane: TabPane;
     toolBar: ToolBar
     statusBar: qx.ui.toolbar.ToolBar;
+    sessionTabs: TabPane;
+    console:Console123;
 
     doc: qx.ui.container.Composite;
 
@@ -56,27 +35,22 @@ class Ide {
         // mainsplit, contains the editor splitpane and the info splitpane
         var mainsplit = new qx.ui.splitpane.Pane("horizontal").set({ decorator: null });
         this.navigatorPane = new TabPane(["Files", "Outline"]);
-        var fileTree = new FileNavigator();
+        var fileTree = new FileNavigator(process.cwd());
         this.navigatorPane.getChildren()[0].add(fileTree, { edge: 0 });
         this.navigatorPane.getChildren()[1].add(new OutlineNavigator(), { edge: 0 });
 
-        fileTree.getSelection().addListener("change", (event: qx.event.type.Data) => {
-            var fileName = event.getData().added[0].getLabel();
-            var p = createPage(fileName, true);
-            p.add(new SourceEditor(), { edge: 0 });
-            sessionTabs.add(p);
-            consoler.log("Added File " + fileName);
-        });
+
+
         mainsplit.add(this.navigatorPane, 1); // navigator
 
 
         var editorSplit = new qx.ui.splitpane.Pane("vertical").set({ decorator: null });
 
         var infoSplit = new qx.ui.splitpane.Pane("horizontal");
-        var sessionTabs = new TabPane(["file1", "file2", "file3", "file4"], true);
+        this.sessionTabs = new TabPane(["file1", "file2", "file3", "file4"], true);
         infoSplit.set({ decorator: null });
-        infoSplit.add(sessionTabs, 4); // editor
-        sessionTabs.getChildren().forEach((c) => {
+        infoSplit.add(this.sessionTabs, 4); // editor
+        this.sessionTabs.getChildren().forEach((c) => {
             c.add(new SourceEditor(), { edge: 0 });
         });
         infoSplit.add(new TabPane(["Todo", "Properties"]), 1); // todo
@@ -84,13 +58,18 @@ class Ide {
         editorSplit.add(infoSplit, 4);
 
         // Setup Problems section
-        this.problemPane = new TabPane(["Console", "Problems", "Search"]);
-        var consoler = new Console123();
+        this.problemPane = new TabPane(["Problems", "Search", "Console"]);
+        this.console = new Console123();
 
         editorSplit.add(this.problemPane, 2); // Info
-        this.problemPane.getChildren()[0].add(consoler, { edge: 0 });
+
+        this.problemPane.getChildren()[0].add(new ProblemsResult(), { edge: 0 });
         this.problemPane.getChildren()[1].add(new ProblemsResult(), { edge: 0 });
-        this.problemPane.getChildren()[2].add(new ProblemsResult(), { edge: 0 });
+        this.problemPane.getChildren()[2].add(this.console, { edge: 0 });
+
+        this.problemPane.select("Console");
+        // this.problemPane.setSelection([this.problemPane.getChildren()[2]]);
+
 
         mainsplit.add(editorSplit, 4); // main area
 
@@ -107,7 +86,7 @@ class Ide {
 var IDE: Ide;
 
 /**
- * Setup the main layout
+ * This function is called from Qooxdoo to start everything
  */
 function qooxdooMain(app: qx.application.Standalone) {
     IDE = new Ide(app);
