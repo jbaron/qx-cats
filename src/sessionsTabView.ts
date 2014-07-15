@@ -18,10 +18,10 @@ class Sessions {
 
     add(session:Session) {
         if (this.containsSession(session)) {
-            IDE.sessionTabs.activate
+            IDE.sessionPane.activate
         } else {
             this.sessions.push(session);
-            IDE.sessionTabs.addPage(session.name, true);
+            IDE.sessionPane.addPage(session.name, true);
         }
         
     }

@@ -10,8 +10,9 @@ class Ide {
     navigatorPane: TabPane;
     problemPane: TabPane;
     toolBar: ToolBar
+    infoPane: TabPane;
     statusBar: qx.ui.toolbar.ToolBar;
-    sessionTabs: TabPane;
+    sessionPane: TabPane;
     console:Console123;
 
     doc: qx.ui.container.Composite;
@@ -47,13 +48,15 @@ class Ide {
         var editorSplit = new qx.ui.splitpane.Pane("vertical").set({ decorator: null });
 
         var infoSplit = new qx.ui.splitpane.Pane("horizontal");
-        this.sessionTabs = new TabPane(["file1", "file2", "file3", "file4"], true);
+        this.sessionPane = new TabPane(["file1", "file2", "file3", "file4"], true);
         infoSplit.set({ decorator: null });
-        infoSplit.add(this.sessionTabs, 4); // editor
-        this.sessionTabs.getChildren().forEach((c) => {
+        infoSplit.add(this.sessionPane, 4); // editor
+        this.sessionPane.getChildren().forEach((c) => {
             c.add(new SourceEditor(), { edge: 0 });
         });
-        infoSplit.add(new TabPane(["Todo", "Properties"]), 1); // todo
+        
+        this.infoPane = new TabPane(["Todo", "Properties"]);
+        infoSplit.add(this.infoPane, 1); // todo
 
         editorSplit.add(infoSplit, 4);
 
@@ -63,8 +66,8 @@ class Ide {
 
         editorSplit.add(this.problemPane, 2); // Info
 
-        this.problemPane.getChildren()[0].add(new ProblemsResult(), { edge: 0 });
-        this.problemPane.getChildren()[1].add(new ProblemsResult(), { edge: 0 });
+        this.problemPane.getChildren()[0].add(new ResultTable(), { edge: 0 });
+        this.problemPane.getChildren()[1].add(new ResultTable(), { edge: 0 });
         this.problemPane.getChildren()[2].add(this.console, { edge: 0 });
 
         this.problemPane.select("Console");

@@ -5,16 +5,16 @@ class SourceEditor extends qx.ui.core.Widget {
 
     private aceEditor;
 
-    constructor() {
+    constructor(content?:string) {
         super();
         this.addListenerOnce("appear", () => {
             var container = this.getContentElement().getDomElement();
             // create the editor
             this.aceEditor = ace.edit(container);
             this.aceEditor.getSession().setMode("ace/mode/typescript");
-            this.aceEditor.getSession().setValue(this.getContent());
+            // this.aceEditor.getSession().setValue(this.getContent());
             this.aceEditor.getSession();
-            
+            if (content) this.setContent(content);
             this.addListener("resize", () => {
                 // use a timeout to let the layout queue apply its changes to the dom
                 window.setTimeout(() => {
@@ -26,13 +26,9 @@ class SourceEditor extends qx.ui.core.Widget {
         this.setContextMenu(this.createContextMenu());
     }
 
-    private getContent() {
-        try {
-            var fs = require("fs");
-            return fs.readFileSync("./src/application.ts", "UTF8");
-        } catch (err) {
-        return "var i = 0;\n"
-    }
+
+    setContent(value:string) {
+        this.aceEditor.getSession().setValue(value);
     }
     
     private createContextMenu() {

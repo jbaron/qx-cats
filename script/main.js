@@ -30,13 +30,15 @@ var Ide = (function () {
         var editorSplit = new qx.ui.splitpane.Pane("vertical").set({ decorator: null });
 
         var infoSplit = new qx.ui.splitpane.Pane("horizontal");
-        this.sessionTabs = new TabPane(["file1", "file2", "file3", "file4"], true);
+        this.sessionPane = new TabPane(["file1", "file2", "file3", "file4"], true);
         infoSplit.set({ decorator: null });
-        infoSplit.add(this.sessionTabs, 4); // editor
-        this.sessionTabs.getChildren().forEach(function (c) {
+        infoSplit.add(this.sessionPane, 4); // editor
+        this.sessionPane.getChildren().forEach(function (c) {
             c.add(new SourceEditor(), { edge: 0 });
         });
-        infoSplit.add(new TabPane(["Todo", "Properties"]), 1); // todo
+
+        this.infoPane = new TabPane(["Todo", "Properties"]);
+        infoSplit.add(this.infoPane, 1); // todo
 
         editorSplit.add(infoSplit, 4);
 
@@ -46,8 +48,8 @@ var Ide = (function () {
 
         editorSplit.add(this.problemPane, 2); // Info
 
-        this.problemPane.getChildren()[0].add(new ProblemsResult(), { edge: 0 });
-        this.problemPane.getChildren()[1].add(new ProblemsResult(), { edge: 0 });
+        this.problemPane.getChildren()[0].add(new ResultTable(), { edge: 0 });
+        this.problemPane.getChildren()[1].add(new ResultTable(), { edge: 0 });
         this.problemPane.getChildren()[2].add(this.console, { edge: 0 });
 
         this.problemPane.select("Console");
@@ -172,11 +174,12 @@ var FileNavigator = (function (_super) {
 
         console.log("Icon path:" + this.getIconPath());
         this.addListener("dblclick", function () {
-            var fileName = _this.getSelectedFile();
-            if (fileName) {
-                var p = IDE.sessionTabs.addPage(fileName, true);
-                p.add(new SourceEditor(), { edge: 0 });
-                IDE.console.log("Added File " + fileName);
+            var file = _this.getSelectedFile();
+            if (file) {
+                var p = IDE.sessionPane.addPage(file.getLabel(), true);
+                var content = fs.readFileSync(file.getFullPath(), "UTF8");
+                p.add(new SourceEditor(content), { edge: 0 });
+                IDE.console.log("Added File " + file.getLabel());
             }
         });
     }
@@ -187,7 +190,7 @@ var FileNavigator = (function (_super) {
         if (!item.getDirectory)
             return null;
         if (!item.getDirectory()) {
-            return item.getLabel();
+            return item;
         }
         return null;
     };
@@ -250,7 +253,6 @@ var FileNavigator = (function (_super) {
                                 FileNavigator.readDir(value);
                             }, 0);
                         }
-
                         return isOpen;
                     }
                 }, item, index);
@@ -321,9 +323,9 @@ var OutlineNavigator = (function (_super) {
 /**
 * This table displays problems and search result
 */
-var ProblemsResult = (function (_super) {
-    __extends(ProblemsResult, _super);
-    function ProblemsResult() {
+var ResultTable = (function (_super) {
+    __extends(ResultTable, _super);
+    function ResultTable() {
         var tableModel = new qx.ui.table.model.Simple();
         var rowData = this.createRandomRows(20);
 
@@ -343,7 +345,7 @@ var ProblemsResult = (function (_super) {
 
         this.setPadding(0, 0, 0, 0);
     }
-    ProblemsResult.prototype.createRandomRows = function (rowCount) {
+    ResultTable.prototype.createRandomRows = function (rowCount) {
         var rowData = [];
         for (var row = 0; row < rowCount; row++) {
             var row1 = [
@@ -355,7 +357,7 @@ var ProblemsResult = (function (_super) {
         }
         return rowData;
     };
-    return ProblemsResult;
+    return ResultTable;
 })(qx.ui.table.Table);
 var Sessions = (function () {
     function Sessions(sessions) {
@@ -367,10 +369,10 @@ var Sessions = (function () {
 
     Sessions.prototype.add = function (session) {
         if (this.containsSession(session)) {
-            IDE.sessionTabs.activate;
+            IDE.sessionPane.activate;
         } else {
             this.sessions.push(session);
-            IDE.sessionTabs.addPage(session.name, true);
+            IDE.sessionPane.addPage(session.name, true);
         }
     };
     return Sessions;
@@ -380,7 +382,7 @@ var Sessions = (function () {
 */
 var SourceEditor = (function (_super) {
     __extends(SourceEditor, _super);
-    function SourceEditor() {
+    function SourceEditor(content) {
         var _this = this;
         _super.call(this);
         this.addListenerOnce("appear", function () {
@@ -389,9 +391,11 @@ var SourceEditor = (function (_super) {
             // create the editor
             _this.aceEditor = ace.edit(container);
             _this.aceEditor.getSession().setMode("ace/mode/typescript");
-            _this.aceEditor.getSession().setValue(_this.getContent());
-            _this.aceEditor.getSession();
 
+            // this.aceEditor.getSession().setValue(this.getContent());
+            _this.aceEditor.getSession();
+            if (content)
+                _this.setContent(content);
             _this.addListener("resize", function () {
                 // use a timeout to let the layout queue apply its changes to the dom
                 window.setTimeout(function () {
@@ -401,13 +405,8 @@ var SourceEditor = (function (_super) {
         }, this);
         this.setContextMenu(this.createContextMenu());
     }
-    SourceEditor.prototype.getContent = function () {
-        try  {
-            var fs = require("fs");
-            return fs.readFileSync("./src/application.ts", "UTF8");
-        } catch (err) {
-            return "var i = 0;\n";
-        }
+    SourceEditor.prototype.setContent = function (value) {
+        this.aceEditor.getSession().setValue(value);
     };
 
     SourceEditor.prototype.createContextMenu = function () {
@@ -440,8 +439,25 @@ var TabPane = (function (_super) {
         tab.setPadding(0, 0, 0, 0);
         tab.setMargin(0, 0, 0, 0);
         tab.setDecorator(null);
+        tab.getButton().setContextMenu(this.createContextMenu(tab));
         this.add(tab);
         return tab;
+    };
+
+    TabPane.prototype.createContextMenu = function (tab) {
+        var _this = this;
+        var menu = new qx.ui.menu.Menu();
+        var item1 = new qx.ui.menu.Button("Close");
+        item1.addListener("execute", function () {
+            _this.remove(tab);
+        });
+
+        var item2 = new qx.ui.menu.Button("Close other");
+        var item3 = new qx.ui.menu.Button("Close all");
+        menu.add(item1);
+        menu.add(item2);
+        menu.add(item3);
+        return menu;
     };
 
     TabPane.prototype.changed = function (id) {
@@ -509,7 +525,7 @@ var ToolBar = (function (_super) {
 
         var changeButton = new qx.ui.toolbar.Button("Change File");
         changeButton.addListener("click", function () {
-            IDE.sessionTabs.changed("file1");
+            IDE.sessionPane.changed("file1");
         });
 
         this.add(sep1);

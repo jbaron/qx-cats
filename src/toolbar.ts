@@ -20,7 +20,6 @@ class ToolBar extends qx.ui.toolbar.ToolBar {
             this.add(themeButton);
         });
 
-
         var sep1 = new qx.ui.toolbar.Separator();
         var newButton = new qx.ui.toolbar.Button("New", iconPath + "actions/document-new.png");
         var sep2 = new qx.ui.toolbar.Separator();
@@ -39,7 +38,7 @@ class ToolBar extends qx.ui.toolbar.ToolBar {
 
         var changeButton = new qx.ui.toolbar.Button("Change File");
         changeButton.addListener("click", () => { 
-            IDE.sessionTabs.changed("file1");    
+            IDE.sessionPane.changed("file1");    
         });
 
         this.add(sep1);

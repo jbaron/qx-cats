@@ -34,11 +34,12 @@ class FileNavigator extends qx.ui.tree.VirtualTree {
 
         console.log("Icon path:" + this.getIconPath());    
         this.addListener("dblclick", () => {
-            var fileName = this.getSelectedFile();
-            if (fileName) {
-                var p = IDE.sessionTabs.addPage(fileName, true);
-                p.add(new SourceEditor(), { edge: 0 });
-                IDE.console.log("Added File " + fileName);
+            var file = this.getSelectedFile();
+            if (file) {
+                var p = IDE.sessionPane.addPage(file.getLabel(), true);
+                var content = fs.readFileSync(file.getFullPath(), "UTF8");
+                p.add(new SourceEditor(content), { edge: 0 });
+                IDE.console.log("Added File " + file.getLabel());
             }
         });
 
@@ -49,7 +50,7 @@ class FileNavigator extends qx.ui.tree.VirtualTree {
         if (! item) return null;
         if (! item.getDirectory) return null;
         if (! item.getDirectory()) {
-            return item.getLabel();
+            return item;
         }
         return null;
     }
@@ -78,7 +79,6 @@ class FileNavigator extends qx.ui.tree.VirtualTree {
       });
 
     }
-
 
     private createContextMenu() {
         var menu = new qx.ui.menu.Menu();
@@ -115,9 +115,7 @@ class FileNavigator extends qx.ui.tree.VirtualTree {
                                 FileNavigator.readDir(value);
                             }, 0);
 
-
                         }
-
                         return isOpen;
                     }
                 }, item, index);
