@@ -248,6 +248,7 @@ var FileNavigator = (function (_super) {
     };
 
     FileNavigator.prototype.setupDelegate = function () {
+        var self = this;
         var delegate = {
             bindItem: function (controller, item, index) {
                 controller.bindDefaultProperties(item, index);
@@ -260,7 +261,7 @@ var FileNavigator = (function (_super) {
 
                             setTimeout(function () {
                                 value.getChildren().removeAll();
-                                FileNavigator.readDir(value);
+                                self.readDir(value);
                             }, 0);
                         }
                         return isOpen;
@@ -289,9 +290,11 @@ var FileNavigator = (function (_super) {
     * Read the files from a directory
     * @param directory The directory name that should be read
     */
-    FileNavigator.readDir = function (parent) {
+    FileNavigator.prototype.readDir = function (parent) {
         var directory = parent.getFullPath();
         var files = fs.readdirSync(directory);
+
+        // this.directoryModels[directory] = parent;
         files.forEach(function (file) {
             var fullName = path.join(directory, file);
             var stats = fs.statSync(fullName);

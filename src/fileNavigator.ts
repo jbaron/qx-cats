@@ -111,6 +111,7 @@ class FileNavigator extends qx.ui.tree.VirtualTree {
     }
 
     setupDelegate() {
+        var self = this;
         var delegate = {
             bindItem: function(controller, item, index) {
                 controller.bindDefaultProperties(item, index);
@@ -123,7 +124,7 @@ class FileNavigator extends qx.ui.tree.VirtualTree {
 
                             setTimeout(function() {
                                 value.getChildren().removeAll();
-                                FileNavigator.readDir(value);
+                                self.readDir(value);
                             }, 0);
 
                         }
@@ -154,9 +155,10 @@ class FileNavigator extends qx.ui.tree.VirtualTree {
      * Read the files from a directory
      * @param directory The directory name that should be read
      */ 
-    static readDir(parent){
+    readDir(parent){
             var directory = parent.getFullPath();
             var files:string[] = fs.readdirSync(directory);
+            // this.directoryModels[directory] = parent;        
             files.forEach((file) => {
                 var fullName = path.join(directory, file);
                 var stats = fs.statSync(fullName);
