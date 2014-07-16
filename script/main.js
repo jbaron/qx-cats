@@ -161,11 +161,15 @@ var FileNavigator = (function (_super) {
     __extends(FileNavigator, _super);
     function FileNavigator(directory) {
         var _this = this;
+        _super.call(this, null, "label", "children");
+        this.directoryModels = {};
         rootTop.fullPath = directory;
         rootTop.label = path.basename(directory);
         var root = qx.data.marshal.Json.createModel(rootTop, true);
-        _super.call(this, root, "label", "children");
+        this.setModel(root);
 
+        // this.setLabelPath("label");
+        // this.setChildProperty("children");
         this.setDecorator(null);
 
         this.setupDelegate();
@@ -181,6 +185,12 @@ var FileNavigator = (function (_super) {
                 p.add(new SourceEditor(content), { edge: 0 });
                 IDE.console.log("Added File " + file.getLabel());
             }
+        });
+
+        // Force a relaod after a close
+        this.addListener("close", function (event) {
+            var data = event.getData();
+            data.setLoaded(false);
         });
     }
     FileNavigator.prototype.getSelectedFile = function () {
@@ -259,6 +269,20 @@ var FileNavigator = (function (_super) {
             }
         };
         this.setDelegate(delegate);
+    };
+
+    FileNavigator.prototype.refreshDir = function (dir) {
+        var value;
+        setTimeout(function () {
+            // alert("refreshing tree");
+            var node = {
+                label: "Loading",
+                fullPath: "asasasa/dss",
+                directory: false
+            };
+            value.getChildren().removeAll();
+            value.getChildren().push(qx.data.marshal.Json.createModel(node, true));
+        }, 0);
     };
 
     /**
@@ -402,9 +426,30 @@ var SourceEditor = (function (_super) {
                     _this.aceEditor.resize();
                 }, 0);
             });
+            _this.setupInputHandling();
         }, this);
         this.setContextMenu(this.createContextMenu());
+        this.popup = new qx.ui.popup.Popup(new qx.ui.layout.Flow());
+        this.popup.add(new qx.ui.basic.Label("Code completion"));
     }
+    SourceEditor.prototype.autoComplete = function () {
+        // alert("auto complete");
+        var cursor = this.aceEditor.getCursorPosition();
+        var coords = this.aceEditor.renderer.textToScreenCoordinates(cursor.row, cursor.column);
+        this.popup.moveTo(coords.pageX, coords.pageY);
+        this.popup.show();
+    };
+
+    SourceEditor.prototype.setupInputHandling = function () {
+        var _this = this;
+        var originalTextInput = this.aceEditor.onTextInput;
+        this.aceEditor.onTextInput = function (text) {
+            originalTextInput.call(_this.aceEditor, text);
+            if (text === ".")
+                _this.autoComplete();
+        };
+    };
+
     SourceEditor.prototype.setContent = function (value) {
         this.aceEditor.getSession().setValue(value);
     };

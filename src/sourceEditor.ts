@@ -4,6 +4,7 @@
 class SourceEditor extends qx.ui.core.Widget {
 
     private aceEditor;
+    private popup:qx.ui.popup.Popup;
 
     constructor(content?:string) {
         super();
@@ -21,11 +22,30 @@ class SourceEditor extends qx.ui.core.Widget {
                     this.aceEditor.resize();
                 }, 0);
             });
-
+             this.setupInputHandling();
         }, this);
         this.setContextMenu(this.createContextMenu());
+        this.popup = new qx.ui.popup.Popup(new qx.ui.layout.Flow());
+        this.popup.add(new qx.ui.basic.Label("Code completion"));
     }
 
+    autoComplete() {
+        
+        // alert("auto complete");
+        var cursor = this.aceEditor.getCursorPosition();
+        var coords = this.aceEditor.renderer.textToScreenCoordinates(cursor.row, cursor.column);
+        this.popup.moveTo(coords.pageX, coords.pageY);
+        this.popup.show();
+    }
+
+    setupInputHandling() {
+        
+        var originalTextInput = this.aceEditor.onTextInput;
+        this.aceEditor.onTextInput = (text) => {
+                originalTextInput.call(this.aceEditor, text);
+                if (text === ".") this.autoComplete();
+        };
+    }
 
     setContent(value:string) {
         this.aceEditor.getSession().setValue(value);

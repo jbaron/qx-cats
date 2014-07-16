@@ -20,12 +20,16 @@ class FileNavigator extends qx.ui.tree.VirtualTree {
 
     static COUNT = 0;
 
+    private directoryModels = {};
+
     constructor(directory) {
+        super(null,"label", "children");
         rootTop.fullPath = directory;
         rootTop.label = path.basename(directory);
         var root = qx.data.marshal.Json.createModel(rootTop, true);
-        super(root, "label", "children");
-
+        this.setModel(root);
+        // this.setLabelPath("label");
+        // this.setChildProperty("children");
         this.setDecorator(null);
 
         this.setupDelegate();
@@ -41,6 +45,13 @@ class FileNavigator extends qx.ui.tree.VirtualTree {
                 p.add(new SourceEditor(content), { edge: 0 });
                 IDE.console.log("Added File " + file.getLabel());
             }
+        });
+
+
+        // Force a relaod after a close
+        this.addListener("close", (event) => {
+            var data = event.getData();
+            data.setLoaded(false);
         });
 
     }
@@ -122,6 +133,21 @@ class FileNavigator extends qx.ui.tree.VirtualTree {
             }
         };
         this.setDelegate(delegate);
+    }
+
+
+    refreshDir(dir) {
+        var value; // value = this.directoryNodes[dir];
+        setTimeout(function() {
+            // alert("refreshing tree");
+            var node = {
+                label: "Loading",
+                fullPath: "asasasa/dss",
+                directory : false 
+            }
+            value.getChildren().removeAll();
+            value.getChildren().push(qx.data.marshal.Json.createModel(node, true));
+        }, 0);
     }
 
     /**
